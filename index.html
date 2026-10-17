@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0f14">
+<title>BuildCalc — Construction Calculators</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>">
+<style>
+  /* ========== CSS VARIABLES & THEMES ========== */
+  :root {
+    --bg: #0b0f14;
+    --surface: #151b23;
+    --border: #2a3441;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --primary: #f59e0b;
+    --primary-hover: #d97706;
+    --danger: #ef4444;
+    --success: #10b981;
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  [data-theme="light"] {
+    --bg: #f3f4f6;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --primary: #ea580c;
+    --primary-hover: #c2410c;
+  }
+
+  /* ========== BASE STYLES ========== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background-color: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  .wrap { width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+
+  /* ========== TOPBAR ========== */
+  .topbar {
+    background-color: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 64px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text);
+    font-size: 1.25rem;
+  }
+  .brand-icon { font-size: 1.5rem; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-text small { font-size: 0.75rem; color: var(--text-muted); font-weight: normal; }
+  .icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: var(--radius);
+    transition: background 0.2s;
+  }
+  .icon-btn:hover { background: var(--border); }
+
+  /* ========== HOME PAGE ========== */
+  .hero { padding: 40px 0 20px; text-align: center; }
+  .hero h1 { font-size: 2rem; margin-bottom: 10px; }
+  .hero p { color: var(--text-muted); max-width: 600px; margin: 0 auto 20px; }
+  .search {
+    width: 100%;
+    max-width: 500px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search:focus { border-color: var(--primary); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+    padding: 20px 0 40px;
+  }
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .tool-card:hover { transform: translateY(-4px); border-color: var(--primary); }
+  .tool-card-icon { font-size: 2rem; }
+  .tool-card h3 { font-size: 1.1rem; }
+  .tool-card p { font-size: 0.85rem; color: var(--text-muted); flex-grow: 1; }
+
+  /* ========== TOOL VIEW ========== */
+  .back-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    margin: 20px 0;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+  .back-btn:hover { background: var(--border); }
+  .tool-head { margin-bottom: 20px; }
+  .tool-head h2 { font-size: 1.8rem; display: flex; align-items: center; gap: 10px; }
+  .tool-head p { color: var(--text-muted); margin-top: 5px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 40px;
+  }
+
+  /* ========== FORMS & INPUTS ========== */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+  
+  .input-wrap { position: relative; display: flex; gap: 8px; }
+  .input-wrap input, .input-wrap select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+  }
+  .input-wrap input:focus, .input-wrap select:focus { border-color: var(--primary); }
+  
+  /* Dual input for Feet & Inches */
+  .ft-in-group { display: flex; gap: 8px; align-items: center; }
+  .ft-in-group .input-wrap { flex: 1; }
+  .ft-in-group .input-wrap input { padding-right: 32px; }
+  .ft-in-group .input-wrap .unit {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
+  }
+
+  /* ========== RESULTS ========== */
+  .results-panel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 15px;
+    text-align: center;
+  }
+  .stat-box .label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-box .value { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
+  .stat-box .sub { font-size: 0.8rem; color: var(--text-muted); }
+
+  .hidden { display: none !important; }
+  .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: auto; }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.5rem; }
+    .form-grid { grid-template-columns: 1fr; }
+    .tool-head h2 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#/">
+      <span class="brand-icon">🏗️</span>
+      <span class="brand-text">
+        <strong>BuildCalc</strong>
+        <small>Construction Calculators</small>
+      </span>
+    </a>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="Toggle theme">☀️</button>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <!-- HOME PAGE -->
+  <section id="home">
+    <div class="hero">
+      <h1>Every site calculation, in one place.</h1>
+      <p>Concrete, cement, sand, bricks, steel, paint, tiles, excavation, dumper volume &amp; more — instant results, works offline.</p>
+      <input id="search" class="search" type="search" placeholder="Search a tool… e.g. cement, brick, steel" autocomplete="off">
+    </div>
+    <div id="toolGrid" class="grid"></div>
+  </section>
+
+  <!-- TOOL VIEW -->
+  <section id="toolView" class="hidden">
+    <button class="back-btn" id="backBtn" type="button">← All tools</button>
+    <div id="toolHead" class="tool-head"></div>
+    <div id="toolBody" class="card"></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p><strong>BuildCalc</strong> — 100% offline. All calculations run in your browser.</p>
+    <p>Results are estimates. Always verify quantities with your site engineer before ordering.</p>
+  </div>
+</footer>
+
+<script>
+// ==========================================
+// 1. DEFINE ALL TOOLS & CALCULATIONS
+// ==========================================
+const TOOLS = [
+  {
+    id: 'dumper',
+    icon: '🚛',
+    name: 'Dumper Volume & Trips',
+    desc: 'Calculate dumper tray volume in CFT/m³ and estimate total trips based on feet & inches.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>Total Excavation/Soil Volume Required</label>
+          <div class="input-wrap">
+            <input type="number" id="d_tot" value="100" min="0" step="0.1" style="padding-right: 80px;">
+            <select id="d_tot_unit" style="position: absolute; right: 2px; top: 2px; bottom: 2px; width: 75px; padding: 5px; border: none; background: var(--border); border-radius: 6px;">
+              <option value="m3">m³</option>
+              <option value="cft">CFT</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dumper Tray Length</label>
+          <div class="ft-in-group">
+            <div class="input-wrap"><input type="number" id="d_len_ft" value="24" min="0"><span class="unit">ft</span></div>
+            <div class="input-wrap"><input type="number" id="d_len_in" value="5" min="0" max="11"><span class="unit">in</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dumper Tray Width</label>
+          <div class="ft-in-group">
+            <div class="input-wrap"><input type="number" id="d_wid_ft" value="7" min="0"><span class="unit">ft</span></div>
+            <div class="input-wrap"><input type="number" id="d_wid_in" value="9" min="0" max="11"><span class="unit">in</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Dumper Tray Height</label>
+          <div class="ft-in-group">
+            <div class="input-wrap"><input type="number" id="d_hgt_ft" value="4" min="0"><span class="unit">ft</span></div>
+            <div class="input-wrap"><input type="number" id="d_hgt_in" value="11" min="0" max="11"><span class="unit">in</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="results-panel" id="d_results"></div>
+    `,
+    calc: () => {
+      // 1. Get Total Volume
+      const totVol = parseFloat(document.getElementById('d_tot').value) || 0;
+      const totUnit = document.getElementById('d_tot_unit').value;
+
+      // 2. Get Dimensions & Convert to Total Feet
+      const lenFt = (parseFloat(document.getElementById('d_len_ft').value) || 0) + ((parseFloat(document.getElementById('d_len_in').value) || 0) / 12);
+      const widFt = (parseFloat(document.getElementById('d_wid_ft').value) || 0) + ((parseFloat(document.getElementById('d_wid_in').value) || 0) / 12);
+      const hgtFt = (parseFloat(document.getElementById('d_hgt_ft').value) || 0) + ((parseFloat(document.getElementById('d_hgt_in').value) || 0) / 12);
+
+      // 3. Calculate Volume in CFT and m³
+      const dumperVolCft = lenFt * widFt * hgtFt;
+      const dumperVolM3 = dumperVolCft * 0.0283168; // 1 CFT = 0.0283168 m³
+
+      // 4. Calculate Trips
+      let trips = 0;
+      if (totUnit === 'cft') {
+        trips = dumperVolCft > 0 ? Math.ceil(totVol / dumperVolCft) : 0;
+      } else {
+        trips = dumperVolM3 > 0 ? Math.ceil(totVol / dumperVolM3) : 0;
+      }
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box">
+            <div class="label">Dumper Volume</div>
+            <div class="value">${dumperVolCft.toFixed(2)}</div>
+            <div class="sub">Cubic Feet (CFT)</div>
+          </div>
+          <div class="stat-box">
+            <div class="label">Dumper Volume</div>
+            <div class="value">${dumperVolM3.toFixed(2)}</div>
+            <div class="sub">Cubic Meters (m³)</div>
+          </div>
+          <div class="stat-box" style="border-color: var(--primary);">
+            <div class="label">Total Trips Required</div>
+            <div class="value" style="font-size: 2rem;">${trips}</div>
+            <div class="sub">Trips</div>
+          </div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'concrete',
+    icon: '🧱',
+    name: 'Concrete Calculator',
+    desc: 'Calculate concrete volume and material mix (Cement, Sand, Aggregate).',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Length (m)</label>
+          <div class="input-wrap"><input type="number" id="c_len" value="5" min="0" step="0.1"></div>
+        </div>
+        <div class="form-group">
+          <label>Width (m)</label>
+          <div class="input-wrap"><input type="number" id="c_wid" value="4" min="0" step="0.1"></div>
+        </div>
+        <div class="form-group">
+          <label>Depth (m)</label>
+          <div class="input-wrap"><input type="number" id="c_dep" value="0.15" min="0" step="0.01"></div>
+        </div>
+        <div class="form-group">
+          <label>Mix Ratio</label>
+          <div class="input-wrap">
+            <select id="c_mix">
+              <option value="1,1.5,3">M20 (1 : 1.5 : 3)</option>
+              <option value="1,2,4">M15 (1 : 2 : 4)</option>
+              <option value="1,1,2">M25 (1 : 1 : 2)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="results-panel" id="c_results"></div>
+    `,
+    calc: () => {
+      const L = parseFloat(document.getElementById('c_len').value) || 0;
+      const W = parseFloat(document.getElementById('c_wid').value) || 0;
+      const D = parseFloat(document.getElementById('c_dep').value) || 0;
+      const mixStr = document.getElementById('c_mix').value;
+      const [cRatio, sRatio, aRatio] = mixStr.split(',').map(Number);
+      
+      const vol = L * W * D;
+      const dryVol = vol * 1.54;
+      const totalRatio = cRatio + sRatio + aRatio;
+      
+      const cementVol = (cRatio / totalRatio) * dryVol;
+      const cementBags = cementVol / 0.035;
+      const sandVol = (sRatio / totalRatio) * dryVol;
+      const aggVol = (aRatio / totalRatio) * dryVol;
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Wet Volume</div><div class="value">${vol.toFixed(2)}</div><div class="sub">m³</div></div>
+          <div class="stat-box"><div class="label">Cement</div><div class="value">${Math.ceil(cementBags)}</div><div class="sub">50kg Bags</div></div>
+          <div class="stat-box"><div class="label">Sand</div><div class="value">${sandVol.toFixed(2)}</div><div class="sub">m³</div></div>
+          <div class="stat-box"><div class="label">Aggregate</div><div class="value">${aggVol.toFixed(2)}</div><div class="sub">m³</div></div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'bricks',
+    icon: '🧱',
+    name: 'Brick Calculator',
+    desc: 'Estimate the number of bricks and mortar required for a wall.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Wall Length (m)</label>
+          <div class="input-wrap"><input type="number" id="b_len" value="10" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Wall Height (m)</label>
+          <div class="input-wrap"><input type="number" id="b_hgt" value="3" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Wall Thickness</label>
+          <div class="input-wrap">
+            <select id="b_thk">
+              <option value="0.115">Half Brick (115 mm)</option>
+              <option value="0.23">Full Brick (230 mm)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Brick Size</label>
+          <div class="input-wrap">
+            <select id="b_size">
+              <option value="0.19,0.09,0.09">Standard (190x90x90 mm)</option>
+              <option value="0.23,0.11,0.07">Modular (230x110x70 mm)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="results-panel" id="b_results"></div>
+    `,
+    calc: () => {
+      const L = parseFloat(document.getElementById('b_len').value) || 0;
+      const H = parseFloat(document.getElementById('b_hgt').value) || 0;
+      const T = parseFloat(document.getElementById('b_thk').value) || 0;
+      const [bl, bw, bh] = document.getElementById('b_size').value.split(',').map(Number);
+      
+      const wallVol = L * H * T;
+      const mortarThickness = 0.01;
+      const brickVolWithMortar = (bl + mortarThickness) * (bw + mortarThickness) * (bh + mortarThickness);
+      
+      const totalBricks = wallVol / brickVolWithMortar;
+      const mortarVol = wallVol - (totalBricks * (bl * bw * bh));
+      
+      const dryMortarVol = mortarVol * 1.33;
+      const cementVol = dryMortarVol * (1/5);
+      const cementBags = cementVol / 0.035;
+      const sandVol = dryMortarVol * (4/5);
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Total Bricks</div><div class="value">${Math.ceil(totalBricks)}</div><div class="sub">Pieces</div></div>
+          <div class="stat-box"><div class="label">Cement (Mortar)</div><div class="value">${Math.ceil(cementBags)}</div><div class="sub">50kg Bags</div></div>
+          <div class="stat-box"><div class="label">Sand (Mortar)</div><div class="value">${sandVol.toFixed(2)}</div><div class="sub">m³</div></div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'plaster',
+    icon: '🪣',
+    name: 'Plaster Calculator',
+    desc: 'Calculate cement and sand for internal or external wall plastering.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Area to Plaster (m²)</label>
+          <div class="input-wrap"><input type="number" id="p_area" value="20" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Plaster Thickness (mm)</label>
+          <div class="input-wrap"><input type="number" id="p_thk" value="12" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Mix Ratio</label>
+          <div class="input-wrap">
+            <select id="p_mix">
+              <option value="1:3">1:3 (Rich)</option>
+              <option value="1:4" selected>1:4 (Standard)</option>
+              <option value="1:5">1:5 (Economy)</option>
+              <option value="1:6">1:6 (External)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="results-panel" id="p_results"></div>
+    `,
+    calc: () => {
+      const area = parseFloat(document.getElementById('p_area').value) || 0;
+      const thk = (parseFloat(document.getElementById('p_thk').value) || 0) / 1000;
+      const mixStr = document.getElementById('p_mix').value;
+      const [cRatio, sRatio] = mixStr.split(':').map(Number);
+      
+      const wetVol = area * thk;
+      const dryVol = wetVol * 1.33;
+      const totalRatio = cRatio + sRatio;
+      
+      const cementVol = (cRatio / totalRatio) * dryVol;
+      const cementBags = cementVol / 0.035;
+      const sandVol = (sRatio / totalRatio) * dryVol;
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Cement Required</div><div class="value">${Math.ceil(cementBags)}</div><div class="sub">50kg Bags</div></div>
+          <div class="stat-box"><div class="label">Sand Required</div><div class="value">${sandVol.toFixed(2)}</div><div class="sub">m³</div></div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'steel',
+    icon: '🔩',
+    name: 'Steel Rebar Weight',
+    desc: 'Calculate the weight of steel bars based on diameter and length.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Diameter (mm)</label>
+          <div class="input-wrap">
+            <select id="s_dia">
+              <option value="6">6 mm</option>
+              <option value="8">8 mm</option>
+              <option value="10" selected>10 mm</option>
+              <option value="12">12 mm</option>
+              <option value="16">16 mm</option>
+              <option value="20">20 mm</option>
+              <option value="25">25 mm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Total Length of Bars (m)</label>
+          <div class="input-wrap"><input type="number" id="s_len" value="50" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Price per kg (optional)</label>
+          <div class="input-wrap"><input type="number" id="s_price" value="0" min="0" step="0.01"></div>
+        </div>
+      </div>
+      <div class="results-panel" id="s_results"></div>
+    `,
+    calc: () => {
+      const dia = parseFloat(document.getElementById('s_dia').value) || 0;
+      const len = parseFloat(document.getElementById('s_len').value) || 0;
+      const price = parseFloat(document.getElementById('s_price').value) || 0;
+      
+      const weightPerMeter = (dia * dia) / 162;
+      const totalWeight = weightPerMeter * len;
+      const totalCost = totalWeight * price;
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Weight per meter</div><div class="value">${weightPerMeter.toFixed(3)}</div><div class="sub">kg/m</div></div>
+          <div class="stat-box"><div class="label">Total Weight</div><div class="value">${totalWeight.toFixed(2)}</div><div class="sub">kg</div></div>
+          ${price > 0 ? `<div class="stat-box"><div class="label">Estimated Cost</div><div class="value">₹ ${totalCost.toFixed(0)}</div><div class="sub">Total</div></div>` : ''}
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'excavation',
+    icon: '⛏️',
+    name: 'Excavation Calculator',
+    desc: 'Calculate soil volume to be excavated and the bulking factor.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Length (m)</label>
+          <div class="input-wrap"><input type="number" id="e_len" value="10" min="0" step="0.1"></div>
+        </div>
+        <div class="form-group">
+          <label>Width (m)</label>
+          <div class="input-wrap"><input type="number" id="e_wid" value="5" min="0" step="0.1"></div>
+        </div>
+        <div class="form-group">
+          <label>Depth (m)</label>
+          <div class="input-wrap"><input type="number" id="e_dep" value="2" min="0" step="0.1"></div>
+        </div>
+      </div>
+      <div class="results-panel" id="e_results"></div>
+    `,
+    calc: () => {
+      const L = parseFloat(document.getElementById('e_len').value) || 0;
+      const W = parseFloat(document.getElementById('e_wid').value) || 0;
+      const D = parseFloat(document.getElementById('e_dep').value) || 0;
+      
+      const vol = L * W * D;
+      const bulkedVol = vol * 1.3;
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Excavation Volume</div><div class="value">${vol.toFixed(2)}</div><div class="sub">m³ (In-situ)</div></div>
+          <div class="stat-box"><div class="label">Bulked Volume</div><div class="value">${bulkedVol.toFixed(2)}</div><div class="sub">m³ (Loose)</div></div>
+        </div>
+        <p style="margin-top:15px; font-size:0.85rem; color:var(--text-muted);">*Loose soil takes ~30% more volume than in-situ soil.</p>
+      `;
+    }
+  },
+  {
+    id: 'paint',
+    icon: '🎨',
+    name: 'Paint Calculator',
+    desc: 'Estimate liters of paint required for your walls.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Total Wall Area (m²)</label>
+          <div class="input-wrap"><input type="number" id="pt_area" value="100" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Number of Coats</label>
+          <div class="input-wrap"><input type="number" id="pt_coats" value="2" min="1" max="5"></div>
+        </div>
+        <div class="form-group">
+          <label>Coverage per Liter (m²/L)</label>
+          <div class="input-wrap"><input type="number" id="pt_cov" value="10" min="1"></div>
+        </div>
+      </div>
+      <div class="results-panel" id="pt_results"></div>
+    `,
+    calc: () => {
+      const area = parseFloat(document.getElementById('pt_area').value) || 0;
+      const coats = parseFloat(document.getElementById('pt_coats').value) || 1;
+      const cov = parseFloat(document.getElementById('pt_cov').value) || 1;
+      
+      const liters = (area * coats) / cov;
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Total Paint Required</div><div class="value">${liters.toFixed(1)}</div><div class="sub">Liters</div></div>
+        </div>
+      `;
+    }
+  },
+  {
+    id: 'tiles',
+    icon: '⬜',
+    name: 'Tile Calculator',
+    desc: 'Calculate number of tiles needed for a floor or wall.',
+    render: () => `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Room Area (m²)</label>
+          <div class="input-wrap"><input type="number" id="t_area" value="20" min="0"></div>
+        </div>
+        <div class="form-group">
+          <label>Tile Size</label>
+          <div class="input-wrap">
+            <select id="t_size">
+              <option value="0.3,0.3">300 × 300 mm</option>
+              <option value="0.6,0.6" selected>600 × 600 mm</option>
+              <option value="0.8,0.8">800 × 800 mm</option>
+              <option value="0.6,1.2">600 × 1200 mm</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Wastage Percentage (%)</label>
+          <div class="input-wrap"><input type="number" id="t_waste" value="10" min="0" max="50"></div>
+        </div>
+      </div>
+      <div class="results-panel" id="t_results"></div>
+    `,
+    calc: () => {
+      const area = parseFloat(document.getElementById('t_area').value) || 0;
+      const [tl, tw] = document.getElementById('t_size').value.split(',').map(Number);
+      const waste = parseFloat(document.getElementById('t_waste').value) || 0;
+      
+      const tileArea = tl * tw;
+      const baseTiles = area / tileArea;
+      const totalTiles = baseTiles * (1 + (waste / 100));
+
+      return `
+        <div class="results-grid">
+          <div class="stat-box"><div class="label">Area per Tile</div><div class="value">${tileArea.toFixed(2)}</div><div class="sub">m²</div></div>
+          <div class="stat-box"><div class="label">Exact Tiles Needed</div><div class="value">${Math.ceil(baseTiles)}</div><div class="sub">Pieces</div></div>
+          <div class="stat-box"><div class="label">Total (With ${waste}% Waste)</div><div class="value">${Math.ceil(totalTiles)}</div><div class="sub">Pieces</div></div>
+        </div>
+      `;
+    }
+  }
+];
+
+// ==========================================
+// 2. UI LOGIC & ROUTING
+// ==========================================
+const homeSec = document.getElementById('home');
+const toolSec = document.getElementById('toolView');
+const toolGrid = document.getElementById('toolGrid');
+const toolHead = document.getElementById('toolHead');
+const toolBody = document.getElementById('toolBody');
+const searchInput = document.getElementById('search');
+const themeBtn = document.getElementById('themeBtn');
+
+// Render Grid
+function renderGrid(filter = '') {
+  const filtered = TOOLS.filter(t => 
+    t.name.toLowerCase().includes(filter.toLowerCase()) || 
+    t.desc.toLowerCase().includes(filter.toLowerCase())
+  );
+  
+  toolGrid.innerHTML = filtered.map(t => `
+    <div class="tool-card" onclick="location.hash = '#/${t.id}'">
+      <div class="tool-card-icon">${t.icon}</div>
+      <h3>${t.name}</h3>
+      <p>${t.desc}</p>
+    </div>
+  `).join('');
+}
+renderGrid();
+
+// Search
+searchInput.addEventListener('input', (e) => renderGrid(e.target.value));
+
+// Routing
+function handleRoute() {
+  const hash = location.hash.replace('#/', '');
+  if (!hash || hash === '') {
+    homeSec.classList.remove('hidden');
+    toolSec.classList.add('hidden');
+    window.scrollTo(0, 0);
+  } else {
+    const tool = TOOLS.find(t => t.id === hash);
+    if (tool) {
+      homeSec.classList.add('hidden');
+      toolSec.classList.remove('hidden');
+      
+      toolHead.innerHTML = `
+        <h2>${tool.icon} ${tool.name}</h2>
+        <p>${tool.desc}</p>
+      `;
+      toolBody.innerHTML = tool.render() + `<div id="live-results-container"></div>`;
+      
+      // Live calculation binding
+      const inputs = toolBody.querySelectorAll('input, select');
+      const updateResults = () => {
+        const resContainer = document.getElementById('live-results-container');
+        if (resContainer) {
+          resContainer.innerHTML = tool.calc();
+        }
+      };
+      
+      inputs.forEach(input => {
+        input.addEventListener('input', updateResults);
+        input.addEventListener('change', updateResults);
+      });
+      
+      // Initial calculation
+      updateResults();
+      window.scrollTo(0, 0);
+    }
+  }
+}
+
+window.addEventListener('hashchange', handleRoute);
+window.addEventListener('DOMContentLoaded', handleRoute);
+
+// Back Button
+document.getElementById('backBtn').addEventListener('click', () => {
+  location.hash = '#/';
+});
+
+// ==========================================
+// 3. THEME TOGGLE
+// ==========================================
+const currentTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', currentTheme);
+updateThemeIcon(currentTheme);
+
+themeBtn.addEventListener('click', () => {
+  const theme = document.documentElement.getAttribute('data-theme');
+  const newTheme = theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeIcon(newTheme);
+});
+
+function updateThemeIcon(theme) {
+  themeBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+</script>
+</body>
+</html>
